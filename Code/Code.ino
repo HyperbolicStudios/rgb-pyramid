@@ -61,6 +61,7 @@ void loop() {
 }
 
 rgb hue_to_rgb(int hue) {
+    //source: https://arduino.stackexchange.com/questions/75446/rgb-led-color-control-with-a-single-value
 
     int val = 255;
     int sat = 255;
