@@ -29,12 +29,7 @@
 
 
 //FILL THESE FIELDS BEFORE UPLOADING CODE
-#define WIFI_SSID     
-#define WIFI_PASS     
-#define APP_KEY        
-#define APP_SECRET       
 
-#define LIGHT_ID             // Should look like "5dc1564130xxxxxxxxxxxxxx"
 #define BAUD_RATE         9600                // Change baudrate to your need
 #define BLUE_PIN  D5  // PIN for BLUE Mosfet  - change this to your need (D5 = GPIO14 on ESP8266)
 #define RED_PIN   D6  // PIN for RED Mosfet   - change this to your need (D6 = GPIO12 on ESP8266)
@@ -82,9 +77,9 @@ SinricProLight& myLight = SinricPro[LIGHT_ID];  // SinricProLight device
 
 void setStripe() {
 
-    int rValue = map(device_state.color.r * device_state.brightness, 0, 255 * 100, 0, 255);  // calculate red value and map between 0 and 1023 for analogWrite
-    int gValue = map(device_state.color.g * device_state.brightness, 0, 255 * 100, 0, 255);  // calculate green value and map between 0 and 1023 for analogWrite
-    int bValue = map(device_state.color.b * device_state.brightness, 0, 255 * 100, 0, 255);  // calculate blue value and map between 0 and 1023 for analogWrite
+    int rValue = device_state.color.r; 
+    int gValue = device_state.color.g;
+    int bValue = device_state.color.b; 
 
     //Wire.beginTransmission(I2C_SLAVE); // transmit to device #8
     char buf[20];
@@ -94,7 +89,7 @@ void setStripe() {
        sprintf(buf, "%d-%d-%d-%d", 0, 0, 0, 0);
  
     } else {
-       sprintf(buf, "%d-%d-%d-%d", 1, rValue, gValue, bValue);
+       sprintf(buf, "%d-%d-%d-%d-%d", 1, device_state.brightness, rValue, gValue, bValue);
 
     }
 

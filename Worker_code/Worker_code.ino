@@ -1,4 +1,3 @@
-#include <TimeLib.h>
 #include <Wire.h>
 
 #define SDA_PIN 4
@@ -11,13 +10,15 @@ int isOn = 1;
 int freeze = 0;
 
 int control_pin = 5;
+int control_pin2 = 12;
 int red_pin = 3;
 int blue_pin = 6;
 int green_pin = 9;
 
 int hue = 0;
+int brightness = 0;
 
-int interval = 500;
+int interval = 70;
 
 struct rgb {
   int r;
@@ -37,6 +38,7 @@ void setup() {
   Serial.println("I2C is up.");
 
   pinMode(control_pin, OUTPUT);
+  pinMode(control_pin2, OUTPUT);
   pinMode(red_pin, OUTPUT);
   pinMode(green_pin, OUTPUT);
   pinMode(blue_pin, OUTPUT);
@@ -49,13 +51,14 @@ void loop() {
     Serial.println("Frozen!");
    
     writePins(1, cols.r, cols.g, cols.b);
-    delay(2000);
+    delay(4000);
+    Serial.println("Fading...");
     rgb target_cols = hue_to_rgb(hue);
   
     //difference between actual values (cols) and target values
-    int red_step = (target_cols.r - cols.r) / 15;
-    int green_step = (target_cols.g - cols.g) / 15;
-    int blue_step = (target_cols.b - cols.b) / 15;
+    int red_step = (target_cols.r - cols.r) / 25;
+    int green_step = (target_cols.g - cols.g) / 25;
+    int blue_step = (target_cols.b - cols.b) / 25;
 
     for (int i = 0; i < 15; i++) {
       cols.r = cols.r + red_step;
@@ -83,7 +86,7 @@ void loop() {
   }
 
   else {
-    writePins(0, cols.r, cols.g, cols.b);
+    writePins(0, 0, 0, 0);
   }
 
   delay(interval); //Pyramid should be displaying at ~30Hz
@@ -97,30 +100,24 @@ void loop() {
 
 void receiveEvent(size_t howMany) {
 
-  char buf[20];
+  char buf[howMany];
   Wire.readBytes(buf, howMany);
 
   //To extract substrings from a char array in C, you can use the strtok() function, which is part of the standard C library.
   //The strtok() function splits a string into tokens based on a delimiter character, which in your case is the dash -
 
   //yes I used chatGPT for this.
-  char* token = strtok(buf, "-"); // Get the first token
-
+  Serial.println(buf);
   int wasOn = isOn;
-  isOn = atoi(token); // Convert the first token to an integer
-  token = strtok(NULL, "-"); // Get the next token
-  cols.r = atoi(token); // Convert the second token to an integer
-  token = strtok(NULL, "-"); // Get the next token
-  cols.g = atoi(token); // Convert the third token to an integer
-  token = strtok(NULL, "-"); // Get the next token
-  cols.b = atoi(token); // Convert the fourth token to an integer
+  int new_brightness;
+  
+  sscanf(buf, "%d-%d-%d-%d-%d", &isOn, &new_brightness, &cols.r, &cols.g, &cols.b);
 
-  char str[30];
-  sprintf(str, "Recieved from master: %d %d %d %d\n", isOn, cols.r, cols.g, cols.b);
-  Serial.print(str);
-  if (isOn == 1 and wasOn == 1) {
+  if (isOn == 1 and wasOn == 1 and brightness == new_brightness) {
     freeze = 1;
   }
+
+  brightness=new_brightness;
 
 }
 
@@ -192,14 +189,24 @@ rgb hue_to_rgb(int hue) {
 }
 
 void writePins(int control, int r, int g, int b) {
+
   char str[30];
-  sprintf(str, "Writing: %d %d %d %d", control, r, g, b);
+  sprintf(str, "Input: %d %d %d %d %d", control, brightness, r, g, b);
   Serial.println(str);
+  
   r = 255 - r;
   g = 255 - g;
   b = 255 - b;
+  r = map(brightness, 0, 100, 255, r);
+  g = map(brightness, 0, 100, 255, g);
+  b = map(brightness, 0, 100, 255, b);
+  
+  
+  sprintf(str, "Writing: %d %d %d %d", control, r, g, b);
+  Serial.println(str);
 
   digitalWrite(control_pin, control);
+  digitalWrite(control_pin2, control);
   analogWrite(red_pin, r);
   analogWrite(blue_pin, g);
   analogWrite(green_pin, b);
